@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "first-blank",
-    "slug": "first-blank",
+    "name": "shared-reminders",
+    "slug": "shared-reminders",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
