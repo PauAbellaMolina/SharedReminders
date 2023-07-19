@@ -1,66 +1,32 @@
 import React, {useState, useEffect} from 'react';
-import { Pressable, Text, View, FlatList, Button } from 'react-native';
+import { Pressable, Text, View, KeyboardAvoidingView, FlatList, Button, TextInput } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
-import { collection, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { FIRESTORE_DB } from './firebaseConfig';
 import styles from './style'
 
 //--TYPES---------------------------------------
 
-type Item = {
+type Reminder = {
   id: string,
   text: string,
-  strikeThrough: boolean,
-  deleted: boolean
+  strikeThrough: boolean
 };
 
-type ItemProps = {
-  item: Item,
+type ReminderProps = {
+  item: Reminder,
   onStrikeThrough: (id: string) => void,
   onDelete: (id: string) => void
 };
 
 //--COMPONENTS----------------------------------
 
-const DATA: Item[] = [ //TODO PAU this should be retrieved from firestore
-  {
-    id: 'bd7acbea-c1b1-46c2-aed5-3ad53abb28ba',
-    text: 'First Item',
-    strikeThrough: false,
-    deleted: false
-  },
-  {
-    id: '3ac68afc-c605-48d3-a4f8-fbd91aa97f63',
-    text: 'Second Item',
-    strikeThrough: false,
-    deleted: false
-  },
-  {
-    id: '58694a0f-3da1-471f-bd96-145571e29d72',
-    text: 'Third Item',
-    strikeThrough: false,
-    deleted: false
-  }
-];
-
-const Item = ({item, onStrikeThrough, onDelete}: ItemProps) => (
-  <View style={styles.item}>
-    <Pressable onPress={() => onStrikeThrough(item.id)} delayLongPress={200} onLongPress={() => onDelete(item.id)}>
-      <Text style={item.deleted ? [styles.itemText, styles.itemTextDeleted] : item.strikeThrough ? [styles.itemText, styles.itemTextStrikeThrough] : styles.itemText}>· {item.text}</Text>
-    </Pressable>
-  </View>
-);
-
-//--APP MAIN COMPONENT--------------------------
-
-export default function App() {
-  const [reminders, setReminders] = useState<Item[]>([]);
+const RemindersList = () => {
+  const [reminders, setReminders] = useState<Reminder[]>([]);
 
   useEffect(() => {
-    const remindersRef = collection(FIRESTORE_DB, 'reminders');
-  
-    const subscriber = onSnapshot(remindersRef, {
+    const subscriber = onSnapshot(collection(FIRESTORE_DB, 'reminders'), {
       next: (snapshot) => {
         const reminders: any[] = [];
         snapshot.docs.forEach((doc) => {
@@ -70,7 +36,7 @@ export default function App() {
           });
         });
   
-        setReminders(reminders);
+        setReminders(reminders.reverse());
       }
     });
     return () => subscriber();
@@ -78,11 +44,10 @@ export default function App() {
 
   const onStrikeThrough = (id: string) => {
     setReminders(reminders.map(reminder => {
-      if (reminder.id === id && !reminder.deleted) {
+      if (reminder.id === id) {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         // reminder.strikeThrough = !reminder.strikeThrough;
-        const reminderRef = doc(FIRESTORE_DB, 'reminders', reminder.id);
-        updateDoc(reminderRef, {
+        updateDoc(doc(FIRESTORE_DB, 'reminders', reminder.id), {
           strikeThrough: !reminder.strikeThrough
         });
       }
@@ -92,29 +57,65 @@ export default function App() {
 
   const onDelete = (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    setReminders(reminders.map(reminder => {
-      if (reminder.id === id) {
-        // reminder.deleted = !reminder.deleted;
-        const reminderRef = doc(FIRESTORE_DB, 'reminders', reminder.id);
-        updateDoc(reminderRef, {
-          deleted: !reminder.deleted
-        });
-      }
-      return reminder;
-    }));
+    deleteDoc(doc(FIRESTORE_DB, 'reminders', id));
+  };
+  
+  return (
+    <FlatList
+      style={{width: '100%', marginTop: 20}}
+      data={reminders}
+      renderItem={({item}) => (<Reminder item={item} onStrikeThrough={onStrikeThrough} onDelete={onDelete} />)}
+      keyExtractor={item => item.id}
+    />
+  )
+}
+
+const Reminder = ({item, onStrikeThrough, onDelete}: ReminderProps) => (
+  <View style={styles.reminderView}>
+    <Pressable onPress={() => onStrikeThrough(item.id)} delayLongPress={200} onLongPress={() => onDelete(item.id)}>
+      <Text style={item.strikeThrough ? [styles.reminderText, styles.reminderTextStrikeThrough] : styles.reminderText}>· {item.text}</Text>
+    </Pressable>
+    <View style={styles.separator} />
+  </View>
+);
+
+const AddNewReminder = () => {
+  const [newReminderText, setNewReminderText] = useState<string>('');
+
+  const onAddReminder = () => {
+    addDoc(collection(FIRESTORE_DB, 'reminders'), {
+      text: newReminderText,
+      strikeThrough: false
+    });
+    setNewReminderText('');
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="auto" />
-      <Text style={styles.bigTitle}>Shared Reminders</Text>
-      <FlatList
-        style={{width: '100%', marginTop: 20}}
-        data={reminders}
-        // renderItem={({item}) => (!item.deleted ? <Item item={item} onStrikeThrough={onStrikeThrough} onDelete={onDelete} /> : null)}
-        renderItem={({item}) => (<Item item={item} onStrikeThrough={onStrikeThrough} onDelete={onDelete} />)}
-        keyExtractor={item => item.id}
+    <View style={styles.addNewReminderView}>
+      <TextInput
+        style={styles.newReminderInput}
+        onChangeText={setNewReminderText}
+        value={newReminderText}
+        placeholder="Add new reminder"
+      />
+      <Button
+        title="Add"
+        onPress={onAddReminder}
       />
     </View>
+  )
+}
+
+//--APP MAIN COMPONENT--------------------------
+
+export default function App() {
+
+  return (
+    <KeyboardAvoidingView behavior="padding" style={styles.container}>
+      <StatusBar style="auto" />
+      <Text style={styles.bigTitle}>Shared Reminders</Text>
+      <RemindersList/>
+      <AddNewReminder />
+    </KeyboardAvoidingView>
   );
 }
