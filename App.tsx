@@ -55,52 +55,6 @@ const GroupsList = () => {
         });
       });
     });
-
-    //TODO PAU figure subscriptions out - next example doesnt quite work on first group idk why and probably does too many queries to firebase
-    //TODO PAU -> maybe subscribint to each reminder? if firebase can handle it; see below
-    // const remindersQuery = query(collection(FIRESTORE_DB, 'reminders'));
-    // const subscriber = onSnapshot(remindersQuery, {
-    //   next: (snapshot) => {
-    //     const groups: Group[] = [];
-    //     console.log("Here");
-    //     getDocs(collection(FIRESTORE_DB, 'groups')).then((querySnapshot) => {
-    //       querySnapshot.forEach((doc) => {
-    //         getDocs(query(collection(FIRESTORE_DB, 'reminders'), where('groupId', '==', doc.id))).then((querySnapshot) => {
-    //           const reminders: any[] = [];
-    //           querySnapshot.forEach((doc) => {
-    //             reminders.push({
-    //               id: doc.id,
-    //               ...doc.data()
-    //             });
-    //           });
-    //           groups.push({
-    //             id: doc.id,
-    //             name: doc.data().name,
-    //             reminders: reminders.reverse()
-    //           });
-    //           setGroupsState(groups);
-    //         });
-    //       });
-    //     });
-    //     // let groupsAux = groupsState;
-    //     // snapshot.docs.forEach((doc) => {
-    //     //   // remindersAux.push({
-    //     //   //   id: doc.id,
-    //     //   //   ...doc.data()
-    //     //   // });
-    //     //   groupsAux.forEach((group) => {
-    //     //     let reminderToUpdate = group.reminders.find((reminder) => reminder.id === doc.id);
-    //     //     if (reminderToUpdate) {
-    //     //       reminderToUpdate.text = doc.data().text;
-    //     //       reminderToUpdate.strikeThrough = doc.data().strikeThrough;
-    //     //     }
-    //     //   });
-    //     // });
-    //     // console.log(groupsAux, groupsState);
-    //     // // setGroupsState(groupsAux);
-    //   }
-    // });
-    // return () => subscriber();
   }, []);
 
   return (
@@ -113,42 +67,68 @@ const GroupsList = () => {
   )
 };
 
-const Group = ({group}: GroupProps) => (
-  <View style={styles.reminderView}>
-    {/* <Pressable onPress={() => onStrikeThrough(item.id)} delayLongPress={200} onLongPress={() => onDelete(item.id)}> */}
-    <View style={styles.separator} />
-      <Text>{group.name}</Text>
-      <FlatList
-        style={{width: '100%', marginTop: 20}}
-        data={group.reminders}
-        renderItem={({item}) => (<Reminder reminder={item} />)}
-        keyExtractor={item => item.id}
-      />
-    {/* </Pressable> */}
-  </View>
-);
+const Group = ({group}: GroupProps) => {
+  const [groupState, setGroupState] = useState<Group>(group);
+
+  useEffect(() => {
+    const groupQuery = query(collection(FIRESTORE_DB, 'reminders'), where('groupId', '==', group.id));
+    const subscriber = onSnapshot(groupQuery, {
+      next: (snapshot) => {
+        const updatedReminders = snapshot.docs.map((doc) => doc.id);
+        const currentReminders = groupState.reminders.map((reminder) => reminder.id);
+        if (updatedReminders.length !== currentReminders.length || updatedReminders.some((reminder) => !currentReminders.includes(reminder))) {
+          console.log("here");
+          getDocs(query(collection(FIRESTORE_DB, 'reminders'), where('groupId', '==', group.id))).then((querySnapshot) => {
+            const reminders: any[] = [];
+            querySnapshot.forEach((doc) => {
+              reminders.push({
+                id: doc.id,
+                ...doc.data()
+              });
+            });
+            setGroupState({
+              ...groupState,
+              reminders: reminders.reverse()
+            });
+          });
+        }
+      }
+    });
+    return () => subscriber();
+  });
+
+  return (
+      <View style={styles.reminderView}>
+      {/* <Pressable onPress={() => onStrikeThrough(item.id)} delayLongPress={200} onLongPress={() => onDelete(item.id)}> */}
+      <View style={styles.separator} />
+        <Text>{groupState.name}</Text>
+        <FlatList
+          style={{width: '100%', marginTop: 20}}
+          data={groupState.reminders}
+          renderItem={({item}) => (<Reminder reminder={item} />)}
+          keyExtractor={item => item.id}
+        />
+      {/* </Pressable> */}
+    </View>
+  );
+};
 
 const Reminder = ({reminder}: ReminderProps) => {
   const [reminderState, setReminderState] = useState<Reminder>(reminder);
 
-  //TODO PAU -> trying to subscribe to each reminder
   useEffect(() => {
-    const remindersQuery = doc(FIRESTORE_DB, 'reminders', reminderState.id);
-    // const remindersQuery = collection(FIRESTORE_DB, 'reminders');
-    const subscriber = onSnapshot(remindersQuery, {
+    const reminderQuery = doc(FIRESTORE_DB, 'reminders', reminderState.id);
+    const subscriber = onSnapshot(reminderQuery, {
       next: (snapshot) => {
-        console.log("here", snapshot.data());
-        // setReminderState({
-        //   id: snapshot.id,
-        //   ...snapshot.data()
-        // });
-        // snapshot.docs.forEach((doc) => {
-        //   console.log(doc.data());
-        //   setReminderState({
-        //     id: doc.id,
-        //     ...doc.data()
-        //   });
-        // });
+        if (snapshot.data()) {
+          if (snapshot.data()?.text !== reminderState.text || snapshot.data()?.strikeThrough !== reminderState.strikeThrough) {
+            setReminderState({
+              ...reminderState,
+              text: snapshot.data()?.text,
+              strikeThrough: snapshot.data()?.strikeThrough
+            });
+          }
+        }
       }
     });
     return () => subscriber();
@@ -156,16 +136,12 @@ const Reminder = ({reminder}: ReminderProps) => {
 
   const onStrikeThrough = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setReminderState({
-      ...reminderState,
-      strikeThrough: !reminderState.strikeThrough
-    });
     updateDoc(doc(FIRESTORE_DB, 'reminders', reminderState.id), {
       strikeThrough: !reminderState.strikeThrough
     });
   };
 
-  const onDelete = () => { //TODO PAU what do we do here? i guess emit to the parent to remove the reminder from the array (updating parents state) and rerender; nah, should be updated on firebase subscription
+  const onDelete = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     deleteDoc(doc(FIRESTORE_DB, 'reminders', reminderState.id));
   };
