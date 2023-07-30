@@ -7,13 +7,33 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 1,
-    width: '100%',
+    width: '90%',
     backgroundColor: '#CED0CE',
-    // marginBottom: 10
+    alignSelf: 'center',
+    marginTop: 5,
+    marginBottom: 10
   },
   bigTitle: {
     fontSize: 32,
     fontWeight: 'bold'
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 100,
+    borderWidth: 1,
+    borderColor: 'black',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxChecked: {
+    width: 17,
+    height: 17,
+    borderRadius: 100,
+    backgroundColor: 'black'
+  },
+  checkboxUnchecked: {
+    backgroundColor: 'white'
   },
   container: {
     flex: 1,
@@ -34,35 +54,49 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginRight: 5
+    marginRight: 5,
+    marginBottom: 8
   },
-  groupTitleRowActions: {
-    flex: 1,
+  collapseGroupView: {
+    position: 'absolute',
+    right: 0,
+  },
+  groupActionsRenderView: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 10
+    justifyContent: 'space-between',
+    marginHorizontal: 5,
+    alignItems: 'flex-end'
   },
-  groupPressable: {
-    borderWidth: 1,
-    borderColor: 'blue',
-    borderRadius: 10,
-    width: 25
-  },
-  groupPressableText: {
-    fontSize: 20,
+  addNewReminderToGroupText: {
+    marginBottom: 6,
+    fontSize: 16,
     color: 'blue',
     textAlign: 'center'
   },
-  // reminderView: { //not used, remove
-  //   marginBottom: 4
-  // },
+  deleteGroupText: {
+    marginBottom: 6,
+    fontSize: 14,
+    color: 'red',
+    textAlign: 'center'
+  },
+  groupPressableText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center'
+  },
+  reminderView: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10
+  },
   reminderText: {
     fontSize: 20,
     marginBottom: 5
   },
   reminderTextStrikeThrough: {
-    textDecorationLine: 'line-through',
-    textDecorationStyle: 'solid'
+    // textDecorationLine: 'line-through',
+    // textDecorationStyle: 'solid'
+    color: '#b5b5b5'
   },
   addNewReminderView: {
     width: '100%',
@@ -74,11 +108,13 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     paddingHorizontal: 10,
     paddingVertical: 5,
-    marginVertical: 10,
+    marginTop: 5,
+    alignItems: 'center'
   },
   addNewReminderInputView: {
     width: '100%',
     flexDirection: 'row',
+    marginTop: 10
   },
   newReminderInput: {
     height: 45,

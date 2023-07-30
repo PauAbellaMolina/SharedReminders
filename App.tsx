@@ -2,6 +2,7 @@ import React, {useState, useEffect, useRef} from 'react';
 import { Pressable, Text, View, KeyboardAvoidingView, FlatList, Button, TextInput, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { query, where, collection, collectionGroup, onSnapshot, doc, getDocs, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { FIRESTORE_DB } from './firebaseConfig';
 import { GENERAL_GROUP_ID } from '@env'
@@ -114,6 +115,7 @@ const GroupsList = ({setNewSelectedGroup}: GroupsListProps) => {
 
 const Group = ({group, setNewSelectedGroup}: GroupProps) => {
   const [groupState, setGroupState] = useState<Group>(group);
+  const [collapsed, setCollapsed] = useState<boolean>(!groupState.reminders.length);
 
   useEffect(() => {
     const groupQuery = query(collection(FIRESTORE_DB, 'reminders'), where('groupId', '==', group.id));
@@ -163,18 +165,37 @@ const Group = ({group, setNewSelectedGroup}: GroupProps) => {
     deleteDoc(doc(FIRESTORE_DB, 'groups', groupState.id));
   };
 
-  const actionsRender = () => {
+  const onCollapse = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setCollapsed(!collapsed);
+  };
+
+  const collapseGroupRender = () => {
+    return (
+      <View style={styles.collapseGroupView}>
+        <Pressable onPress={() => onCollapse()}>
+          {/* <Text style={styles.groupPressableText}></Text> */}
+          <Ionicons name={collapsed ? 'chevron-down' : 'chevron-up'} size={24} color="black" />
+        </Pressable>
+      </View>
+    )
+  };
+
+  const groupActionsRender = () => {
     if (groupState.id === GENERAL_GROUP_ID) {
       return;
     }
     return (
-      <View style={styles.groupTitleRowActions}>
-        <Pressable style={styles.groupPressable} onPress={() => confirmDeleteGroup()}>
-          <Text style={styles.groupPressableText}>x</Text>
-        </Pressable>
-        <Pressable style={styles.groupPressable} onPress={() => setNewSelectedGroup(group)}>
-          <Text style={styles.groupPressableText}>+</Text>
-        </Pressable>
+      <View>
+        <View style={styles.separator} />
+        <View style={styles.groupActionsRenderView}>
+          <Pressable onPress={() => confirmDeleteGroup()}>
+            <Text style={styles.deleteGroupText}>Delete group</Text>
+          </Pressable>
+          <Pressable onPress={() => setNewSelectedGroup(group)}>
+            <Text style={styles.addNewReminderToGroupText}>Add new reminder</Text>
+          </Pressable>
+        </View>
       </View>
     )
   };
@@ -184,15 +205,15 @@ const Group = ({group, setNewSelectedGroup}: GroupProps) => {
       {/* <Pressable onPress={() => onStrikeThrough(item.id)} delayLongPress={200} onLongPress={() => onDelete(item.id)}> */}
         <View style={styles.groupTitleRow}>
           <Text>{groupState.name}</Text>
-          {actionsRender()}
+          {groupState.reminders.length ? collapseGroupRender() : null}
         </View>
         <FlatList
-          style={{width: '100%', marginHorizontal: 7}}
+          style={collapsed ? {display: 'none'} : {width: '100%', marginHorizontal: 7, marginBottom: 6, gap: 6}}
           data={groupState.reminders}
           renderItem={({item}) => (<Reminder reminder={item} />)}
           keyExtractor={item => item.id}
         />
-        {/* <View style={styles.separator} /> */}
+        {groupActionsRender()}
       {/* </Pressable> */}
     </View>
   );
@@ -220,7 +241,7 @@ const Reminder = ({reminder}: ReminderProps) => {
   });
 
   const onStrikeThrough = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     updateDoc(doc(FIRESTORE_DB, 'reminders', reminderState.id), {
       strikeThrough: !reminderState.strikeThrough
     });
@@ -232,9 +253,10 @@ const Reminder = ({reminder}: ReminderProps) => {
   };
 
   return (
-    <View>
-      <Pressable onPress={() => onStrikeThrough()} delayLongPress={200} onLongPress={() => onDelete()}>
-        <Text style={reminderState.strikeThrough ? [styles.reminderText, styles.reminderTextStrikeThrough] : styles.reminderText}>· {reminderState.text}</Text>
+    <View style={styles.reminderView}>
+      <Pressable style={styles.reminderView} onPress={() => onStrikeThrough()} delayLongPress={250} onLongPress={() => onDelete()}>
+        <View style={styles.checkbox}><View style={reminderState.strikeThrough ? styles.checkboxChecked : styles.checkboxUnchecked}></View></View>
+        <Text style={reminderState.strikeThrough ? [styles.reminderText, styles.reminderTextStrikeThrough] : styles.reminderText}>{reminderState.text}</Text>
       </Pressable>
     </View>
   );
@@ -297,7 +319,7 @@ const AddNewReminder = ({selectedGroup, setNewSelectedGroup}: AddNewReminderProp
     }
     return (
       <View style={styles.addNewReminderSelectedGroupPill}>
-        <Pressable onPress={() => onDeleteSelectedGroup()}><Text>X</Text></Pressable><Text>Add to {selectedGroup?.name}</Text>
+        <Pressable onPress={() => onDeleteSelectedGroup()}><Ionicons name="close" size={22} color="black" /></Pressable><Text>Add to {selectedGroup?.name}</Text>
       </View>
     );
   };
