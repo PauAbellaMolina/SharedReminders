@@ -3,7 +3,8 @@ import { Pressable, Text, View, KeyboardAvoidingView, FlatList, Button, TextInpu
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { query, where, collection, collectionGroup, onSnapshot, doc, getDocs, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { query, where, collection, onSnapshot, doc, getDocs, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FIRESTORE_DB } from './firebaseConfig';
 import { GENERAL_GROUP_ID } from '@env'
 import styles from './style'
@@ -48,7 +49,17 @@ const GroupsList = ({setNewSelectedGroup}: GroupsListProps) => {
 
   const groups: Group[] = [];
 
+  const clearAll = async () => {
+    try {
+      await AsyncStorage.clear()
+    } catch(e) {
+      console.error(e);
+    }
+    console.log('CLEARED')
+  }
+
   useEffect(() => {
+    // clearAll();
     getDocs(collection(FIRESTORE_DB, 'groups')).then((querySnapshot) => {
       let i = 0;
       const querySnapshotSize = querySnapshot.size;
@@ -117,7 +128,30 @@ const Group = ({group, setNewSelectedGroup}: GroupProps) => {
   const [groupState, setGroupState] = useState<Group>(group);
   const [collapsed, setCollapsed] = useState<boolean>(!groupState.reminders.length);
 
+  const setStringValue = async (value: any) => {
+    try {
+      await AsyncStorage.setItem(group.id, value)
+    } catch(e) {
+      console.error(e);
+    }
+  }
+
+  const getMyStringValue = async () => {
+    try {
+      return await AsyncStorage.getItem(group.id)
+    } catch(e) {
+      console.error(e);
+    }
+  }
+
   useEffect(() => {
+    getMyStringValue().then((value) => {
+      if (!value) {
+        setStringValue(JSON.stringify(collapsed));
+        return;
+      }
+      setCollapsed(JSON.parse(value));
+    });
     const groupQuery = query(collection(FIRESTORE_DB, 'reminders'), where('groupId', '==', group.id));
     const subscriber = onSnapshot(groupQuery, {
       next: (snapshot) => {
@@ -167,6 +201,7 @@ const Group = ({group, setNewSelectedGroup}: GroupProps) => {
 
   const onCollapse = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setStringValue(JSON.stringify(!collapsed));
     setCollapsed(!collapsed);
   };
 
@@ -288,7 +323,7 @@ const AddNewGroup = () => {
   )
 }
 
-const AddNewReminder = ({selectedGroup, setNewSelectedGroup}: AddNewReminderProps) => { //TODO PAU update this to support groups
+const AddNewReminder = ({selectedGroup, setNewSelectedGroup}: AddNewReminderProps) => {
   const [newReminderText, setNewReminderText] = useState<string>('');
 
   const inputRef = useRef<TextInput>(null);
@@ -319,13 +354,13 @@ const AddNewReminder = ({selectedGroup, setNewSelectedGroup}: AddNewReminderProp
     }
     return (
       <View style={styles.addNewReminderSelectedGroupPill}>
-        <Pressable onPress={() => onDeleteSelectedGroup()}><Ionicons name="close" size={22} color="black" /></Pressable><Text>Add to {selectedGroup?.name}</Text>
+        <Pressable onPress={() => onDeleteSelectedGroup()} style={styles.addNewReminderSelectedGroupPillPressable}><Ionicons name="close" size={22} color="black" /><Text>Add to {selectedGroup?.name}</Text></Pressable>
       </View>
     );
   };
 
   return (
-    <View style={styles.addNewReminderView}>
+    <View>
       {selectedGroupPill()}
       <View style={styles.addNewReminderInputView}>
         <TextInput

@@ -70,13 +70,13 @@ const styles = StyleSheet.create({
   addNewReminderToGroupText: {
     marginBottom: 6,
     fontSize: 16,
-    color: 'blue',
+    color: '#007aff',
     textAlign: 'center'
   },
   deleteGroupText: {
     marginBottom: 6,
     fontSize: 14,
-    color: 'red',
+    color: '#ff6861',
     textAlign: 'center'
   },
   groupPressableText: {
@@ -98,18 +98,19 @@ const styles = StyleSheet.create({
     // textDecorationStyle: 'solid'
     color: '#b5b5b5'
   },
-  addNewReminderView: {
-    width: '100%',
-    flexDirection: 'column'
-  },
   addNewReminderSelectedGroupPill: {
-    flexDirection: 'row',
-    gap: 10,
-    borderRadius: 15,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    position: 'absolute',
+    top: -50,
+    borderRadius: 100,
+    paddingHorizontal: 11,
+    paddingVertical: 8,
     marginTop: 5,
-    alignItems: 'center'
+    backgroundColor: '#419dff'
+  },
+  addNewReminderSelectedGroupPillPressable: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   addNewReminderInputView: {
     width: '100%',
