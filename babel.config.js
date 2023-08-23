@@ -10,7 +10,23 @@ module.exports = function(api) {
         "safe": false,
         "allowUndefined": true,
         "verbose": false
-      }]
+      }],
+      ['module-resolver', {
+        "alias": {
+          "@components": "./src/components",
+          "@firebaseConfig": "./firebaseConfig.js",
+          "@types": "./src/types/types.ts",
+          "@styles": "./src/styles",
+          "@assets": "./assets",
+        },
+        "extensions": [
+          ".js",
+          ".jsx",
+          ".ts",
+          ".tsx",
+        ]
+      },
+    ],
     ]
   };
 };
