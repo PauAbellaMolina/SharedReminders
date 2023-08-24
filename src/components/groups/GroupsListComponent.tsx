@@ -37,7 +37,7 @@ const GroupsListComponent = ({setNewSelectedGroup}: GroupsListProps) => {
           groups.push({
             id: doc.id,
             name: doc.data().name,
-            reminders: reminders.reverse()
+            reminders: reminders.sort((a, b) => a?.createdAt?.seconds - b?.createdAt?.seconds).reverse()
           });
           i++;
           if (i === querySnapshotSize) {
@@ -62,7 +62,8 @@ const GroupsListComponent = ({setNewSelectedGroup}: GroupsListProps) => {
         const newGroup = resultGroups.find((group) => !groups.some((groupState) => groupState.id === group.id));
         const deletedGroup = groups.find((group) => !resultGroups.some((groupState) => groupState.id === group.id));
         if (newGroup) {
-          console.log("HEREEE->", newGroup);
+          console.log("NEW GROUP->", newGroup);
+          setNewSelectedGroup(newGroup);
           groups.push(newGroup);
           setGroupsState(groups);
         }

@@ -26,6 +26,7 @@ const AddNewReminderComponent = ({selectedGroup, setNewSelectedGroup}: AddNewRem
 
   const onAddReminder = () => {
     addDoc(collection(FIRESTORE_DB, 'reminders'), {
+      createdAt: new Date(),
       text: newReminderText,
       strikeThrough: false,
       groupId: selectedGroup?.id || GENERAL_GROUP_ID

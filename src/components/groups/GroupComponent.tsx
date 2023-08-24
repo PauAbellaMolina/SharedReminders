@@ -14,7 +14,7 @@ const GroupComponent = ({group, setNewSelectedGroup}: GroupProps) => {
     const [groupState, setGroupState] = useState<Group>(group);
     const [collapsed, setCollapsed] = useState<boolean>(!groupState.reminders.length);
   
-    const setStringValue = async (value: any) => {
+    const storeLocalCollapsed = async (value: any) => {
       try {
         await AsyncStorage.setItem(group.id, value)
       } catch(e) {
@@ -22,7 +22,7 @@ const GroupComponent = ({group, setNewSelectedGroup}: GroupProps) => {
       }
     }
   
-    const getMyStringValue = async () => {
+    const readLocalCollapsed = async () => {
       try {
         return await AsyncStorage.getItem(group.id)
       } catch(e) {
@@ -31,9 +31,9 @@ const GroupComponent = ({group, setNewSelectedGroup}: GroupProps) => {
     }
   
     useEffect(() => {
-      getMyStringValue().then((value) => {
+      readLocalCollapsed().then((value) => {
         if (!value) {
-          setStringValue(JSON.stringify(collapsed));
+          storeLocalCollapsed(JSON.stringify(!collapsed));
           return;
         }
         setCollapsed(JSON.parse(value));
@@ -54,7 +54,7 @@ const GroupComponent = ({group, setNewSelectedGroup}: GroupProps) => {
               });
               setGroupState({
                 ...groupState,
-                reminders: reminders.reverse()
+                reminders: reminders.sort((a, b) => a?.createdAt?.seconds - b?.createdAt?.seconds).reverse()
               });
             });
           }
@@ -87,7 +87,7 @@ const GroupComponent = ({group, setNewSelectedGroup}: GroupProps) => {
   
     const onCollapse = () => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      setStringValue(JSON.stringify(!collapsed));
+      storeLocalCollapsed(JSON.stringify(!collapsed));
       setCollapsed(!collapsed);
     };
   

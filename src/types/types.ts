@@ -28,3 +28,7 @@ export type AddNewReminderProps = {
   selectedGroup: Group | undefined;
   setNewSelectedGroup: (group: Group | null) => void;
 };
+
+export type AddNewGroupProps = {
+  setAddingGroupState: (addingGroup: boolean) => void;
+};
