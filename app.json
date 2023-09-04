@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "shared-reminders",
-    "slug": "shared-reminders",
+    "name": "SharedReminders",
+    "slug": "SharedReminders",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -15,7 +15,8 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.pauabella.sharedreminders"
     },
     "android": {
       "adaptiveIcon": {
@@ -28,6 +29,11 @@
     },
     "experiments": {
       "tsconfigPaths": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "111be235-624f-4bee-8a75-7548e3a5ac60"
+      }
     }
   }
 }
