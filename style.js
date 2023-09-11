@@ -5,10 +5,16 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold'
   },
-  container: {
+  outterContainer: {
     flex: 1,
     marginTop: 50,
     marginHorizontal: 15,
+    alignItems: "flex-start",
+    justifyContent: "flex-start",
+  },
+  container: {
+    flex: 1,
+    width: '100%',
     backgroundColor: '#fff',
     alignItems: 'flex-start',
     justifyContent: 'flex-start'

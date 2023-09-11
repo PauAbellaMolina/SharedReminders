@@ -4,9 +4,12 @@ import { collection, addDoc } from 'firebase/firestore';
 import styles from '@styles/AddNewGroupComponent';
 import { FIRESTORE_DB } from '@firebaseConfig';
 import { AddNewGroupProps } from '@types';
+import { useAuth } from '@clerk/clerk-expo';
 
 const AddNewGroupComponent = ({setAddingGroupState}: AddNewGroupProps) => {
   const [newGroupName, setNewGroupName] = useState<string>('');
+
+  const { userId } = useAuth();
 
   const inputRef = useRef<TextInput>(null);
 
@@ -16,7 +19,8 @@ const AddNewGroupComponent = ({setAddingGroupState}: AddNewGroupProps) => {
 
   const onAddGroup = () => {
     addDoc(collection(FIRESTORE_DB, 'groups'), {
-      name: newGroupName
+      name: newGroupName,
+      createdBy: userId
     }).finally(() => {
       setAddingGroupState(false);
       setNewGroupName('');

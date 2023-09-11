@@ -14,6 +14,7 @@ module.exports = function(api) {
       ['module-resolver', {
         "alias": {
           "@components": "./src/components",
+          "@screens": "./src/screens",
           "@firebaseConfig": "./firebaseConfig.js",
           "@types": "./src/types/types.ts",
           "@styles": "./src/styles",
