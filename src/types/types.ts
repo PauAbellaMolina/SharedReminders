@@ -2,6 +2,7 @@ export type Group = {
   id: string;
   name: string;
   createdBy: string;
+  private: boolean;
   reminders: Reminder[];
 };
 
@@ -13,6 +14,7 @@ export type Reminder = {
 };
 
 export type GroupsListProps = {
+  selectedGroup: Group | undefined;
   setNewSelectedGroup: (group: Group | null) => void;
 };
 

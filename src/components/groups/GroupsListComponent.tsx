@@ -1,13 +1,17 @@
 import React, {useState, useEffect } from 'react';
 import { FlatList } from 'react-native';
-import { query, where, collection, onSnapshot, getDocs } from 'firebase/firestore';
+import { query, where, collection, onSnapshot, getDocs, or } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Group, GroupsListProps } from '@types';
 import { FIRESTORE_DB } from '@firebaseConfig';
 import GroupComponent from '@components/groups/GroupComponent';
+import { useAuth } from '@clerk/clerk-expo';
+import { GENERAL_GROUP_ID } from '@env';
 
-const GroupsListComponent = ({setNewSelectedGroup}: GroupsListProps) => {
+const GroupsListComponent = ({selectedGroup, setNewSelectedGroup}: GroupsListProps) => {
   const [groupsState, setGroupsState] = useState<Group[]>([]);
+  
+  const { userId } = useAuth();
 
   const groups: Group[] = [];
 
@@ -22,7 +26,7 @@ const GroupsListComponent = ({setNewSelectedGroup}: GroupsListProps) => {
 
   useEffect(() => {
     // clearAll();
-    getDocs(collection(FIRESTORE_DB, 'groups')).then((querySnapshot) => {
+    getDocs(query(collection(FIRESTORE_DB, 'groups'), or(where('createdBy', '==', userId), where('private', '==', false)))).then((querySnapshot) => {
       let i = 0;
       const querySnapshotSize = querySnapshot.size;
       querySnapshot.forEach((doc) => {
@@ -37,10 +41,18 @@ const GroupsListComponent = ({setNewSelectedGroup}: GroupsListProps) => {
           groups.push({
             id: doc.id,
             name: doc.data().name,
+            createdBy: doc.data().createdBy,
+            private: doc.data().private,
             reminders: reminders.sort((a, b) => a?.createdAt?.seconds - b?.createdAt?.seconds).reverse()
           });
           i++;
           if (i === querySnapshotSize) {
+            console.log("GROUPS->", groups);
+            //place group with ID GENERAL_GROUP_ID at the start of the array
+            // const generalGroupIndex = groups.findIndex((group) => group.id === GENERAL_GROUP_ID);
+            // if (generalGroupIndex !== -1) {
+            //   groups.unshift(groups.splice(generalGroupIndex, 1)[0]);
+            // }
             setGroupsState(groups);
             subscribeToGroups();
           }
@@ -50,12 +62,14 @@ const GroupsListComponent = ({setNewSelectedGroup}: GroupsListProps) => {
   }, []);
 
   const subscribeToGroups = () => {
-    const subscriber = onSnapshot(collection(FIRESTORE_DB, 'groups'), {
+    const subscriber = onSnapshot(query(collection(FIRESTORE_DB, 'groups'), or(where('createdBy', '==', userId), where('private', '==', false))), {
       next: (snapshot) => {
         const resultGroups: Group[] = snapshot.docs.map((doc) => {
           return {
             id: doc.id,
             name: doc.data().name,
+            createdBy: doc.data().createdBy,
+            private: doc.data().private,
             reminders: []
           };
         });
@@ -68,7 +82,10 @@ const GroupsListComponent = ({setNewSelectedGroup}: GroupsListProps) => {
           setGroupsState(groups);
         }
         if (deletedGroup) {
-          console.log("DELETED->", deletedGroup);
+          console.log("DELETED->", selectedGroup, deletedGroup);
+          if (selectedGroup?.id === deletedGroup.id) {
+            setNewSelectedGroup(null);
+          }
           groups.splice(groups.indexOf(deletedGroup), 1);
           setGroupsState(groups);
         }

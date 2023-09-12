@@ -51,7 +51,7 @@ export default function App() {
                 <Ionicons name="add" size={40} color="black" />
               </Pressable>
             </View>
-            <GroupsListComponent setNewSelectedGroup={setNewSelectedGroup} />
+            <GroupsListComponent selectedGroup={selectedGroup} setNewSelectedGroup={setNewSelectedGroup} />
             {addingGroup
               ? <AddNewGroupComponent setAddingGroupState={setAddingGroupState} />
               : <AddNewReminderComponent selectedGroup={selectedGroup} setNewSelectedGroup={setNewSelectedGroup} />

@@ -2,17 +2,20 @@ import React, {useState, useEffect} from 'react';
 import { Pressable, Text, View, FlatList, Alert } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { query, where, collection, onSnapshot, doc, getDocs, deleteDoc } from 'firebase/firestore';
+import { query, where, collection, onSnapshot, doc, getDocs, deleteDoc, updateDoc } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GENERAL_GROUP_ID } from '@env';
 import styles from '@styles/GroupComponent';
 import { Group, GroupProps } from '@types';
 import { FIRESTORE_DB } from '@firebaseConfig';
 import ReminderComponent from '@components/reminders/ReminderComponent';
+import { useAuth } from '@clerk/clerk-expo';
 
 const GroupComponent = ({group, setNewSelectedGroup}: GroupProps) => {
     const [groupState, setGroupState] = useState<Group>(group);
     const [collapsed, setCollapsed] = useState<boolean>(!groupState.reminders.length);
+
+    const { userId } = useAuth();
   
     const storeLocalCollapsed = async (value: any) => {
       try {
@@ -62,12 +65,24 @@ const GroupComponent = ({group, setNewSelectedGroup}: GroupProps) => {
       });
       return () => subscriber();
     });
+
+    const onChangeVisibility = () => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      groupState.private = !groupState.private;
+      setGroupState({
+        ...groupState,
+        private: groupState.private
+      });
+      updateDoc(doc(FIRESTORE_DB, 'groups', groupState.id), {
+        private: groupState.private
+      });
+    };
   
     const confirmDeleteGroup = () => {
       Alert.alert('Delete group "' + group.name + '"', ('Sure want to delete ' + group.name + ' and all it\'s reminders'), [
         {
           text: 'Cancel',
-          onPress: () => console.log('Cancel Pressed'),
+          onPress: () => null,
           style: 'cancel',
         },
         {
@@ -101,6 +116,17 @@ const GroupComponent = ({group, setNewSelectedGroup}: GroupProps) => {
         </View>
       )
     };
+
+    const groupVisibilityChangeRender = () => {
+      if (userId !== groupState.createdBy) {
+        return;
+      }
+      return (
+        <Pressable onPress={() => onChangeVisibility()}>
+          <Text style={styles.deleteGroupText}>{groupState.private ? 'Make public' : 'Make private'}</Text>
+        </Pressable>
+      )
+    };
   
     const groupActionsRender = () => {
       if (groupState.id === GENERAL_GROUP_ID) {
@@ -110,6 +136,7 @@ const GroupComponent = ({group, setNewSelectedGroup}: GroupProps) => {
         <View>
           <View style={styles.separator} />
           <View style={styles.groupActionsRenderView}>
+            {groupVisibilityChangeRender()}
             <Pressable onPress={() => confirmDeleteGroup()}>
               <Text style={styles.deleteGroupText}>Delete group</Text>
             </Pressable>
